@@ -245,7 +245,7 @@ public class ChargingControlController extends LineageHealthFeature {
 
         // For devices that do not support bypass, we can only always listen to battery change
         // because we can't distinguish between "unplugged" and "plugged in but not charging".
-        if (mCurrentProvider != null && mCurrentProvider.requiresBatteryLevelMonitoring()) {
+        if (mCurrentProvider.requiresBatteryLevelMonitoring()) {
             mIsPowerConnected = true;
             onPowerStatus(true);
             handleSettingChange();
@@ -297,34 +297,30 @@ public class ChargingControlController extends LineageHealthFeature {
     protected void resetInternalState() {
         mIsControlCancelledOnce = false;
         mChargingNotification.cancel();
-        
-        if (mCurrentProvider != null) {
-            mCurrentProvider.reset();
-        }
+
+        mCurrentProvider.reset();
     }
 
     protected void setChargingCancelledOnce() {
         mIsControlCancelledOnce = true;
 
-        if (mCurrentProvider != null) {
-            if (mCurrentProvider.requiresBatteryLevelMonitoring()) {
-                IntentFilter disconnectFilter = new IntentFilter(
-                        Intent.ACTION_POWER_DISCONNECTED);
+        if (mCurrentProvider.requiresBatteryLevelMonitoring()) {
+            IntentFilter disconnectFilter = new IntentFilter(
+                    Intent.ACTION_POWER_DISCONNECTED);
 
-                // Register a one-time receiver that resets internal state on power
-                // disconnection
-                mContext.registerReceiver(new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        Log.i(TAG, "Power disconnected, reset internal states");
-                        resetInternalState();
-                        mContext.unregisterReceiver(this);
-                    }
-                }, disconnectFilter);
-            }
-
-            mCurrentProvider.disable();
+            // Register a one-time receiver that resets internal state on power
+            // disconnection
+            mContext.registerReceiver(new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    Log.i(TAG, "Power disconnected, reset internal states");
+                    resetInternalState();
+                    mContext.unregisterReceiver(this);
+                }
+            }, disconnectFilter);
         }
+
+        mCurrentProvider.disable();
         mChargingNotification.cancel();
     }
 
@@ -417,7 +413,6 @@ public class ChargingControlController extends LineageHealthFeature {
     }
 
     protected void updateChargeControl() {
-        if (mCurrentProvider == null) return;
         if (!isEnabled() || mIsControlCancelledOnce || !mIsPowerConnected) {
             mCurrentProvider.disable();
             mChargingNotification.cancel();
@@ -475,8 +470,7 @@ public class ChargingControlController extends LineageHealthFeature {
      *     - ${@link lineageos.health.HealthInterface#MODE_LIMIT}
      */
     private boolean isProvideSupportCCMode(int mode) {
-        return mCurrentProvider != null 
-            && mCurrentProvider.isChargingControlModeSupported(mode);
+        return mCurrentProvider.isChargingControlModeSupported(mode);
     }
 
     private void handleSettingChange() {
@@ -517,9 +511,7 @@ public class ChargingControlController extends LineageHealthFeature {
         pw.println("  mIsDoneNotification: " + mChargingNotification.isDoneNotification());
         pw.println("  mIsControlCancelledOnce: " + mIsControlCancelledOnce);
         pw.println();
-        if (mCurrentProvider != null) {
-            mCurrentProvider.dump(pw);
-        }
+        mCurrentProvider.dump(pw);
     }
 
     /* Battery Broadcast Receiver */
